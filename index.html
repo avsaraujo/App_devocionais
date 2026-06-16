@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1C1917">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Devocionais">
+<link rel="manifest" href="./manifest.json">
+<title>Devocionais</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   TOKENS DE DESIGN
+   Paleta: pedra quente + âmbar litúrgico + verde-floresta (2ª leitura)
+   Tipografia: display em Georgia + corpo em system-ui
+   Assinatura: linha dourada de progresso que se ilumina ao rolar
+═══════════════════════════════════════════════════════════════════ */
+:root {
+  --stone-950: #0C0A09;
+  --stone-900: #1C1917;
+  --stone-800: #292524;
+  --stone-700: #44403C;
+  --stone-500: #78716C;
+  --stone-300: #D6D3D1;
+  --stone-100: #F5F5F4;
+
+  --amber-400: #FBBF24;
+  --amber-300: #FCD34D;
+  --amber-200: #FDE68A;
+  --amber-100: #FEF3C7;
+
+  --forest-700: #15803D;
+  --forest-500: #22C55E;
+  --forest-100: #DCFCE7;
+
+  --rose-500: #F43F5E;
+
+  --bg:        var(--stone-900);
+  --surface:   var(--stone-800);
+  --border:    var(--stone-700);
+  --text-main: var(--stone-100);
+  --text-muted:var(--stone-500);
+  --text-dim:  var(--stone-300);
+  --accent:    var(--amber-400);
+  --accent-soft: rgba(251,191,36,0.12);
+  --r: 10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text-main);
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100dvh;
+  overscroll-behavior: none;
+}
+
+/* ── Tipografia ─────────────────────────────────────────────────── */
+.serif { font-family: Georgia, 'Times New Roman', serif; }
+
+h1, h2, .day-title { font-family: Georgia, 'Times New Roman', serif; }
+
+/* ── Layout principal ───────────────────────────────────────────── */
+#app { display: flex; flex-direction: column; min-height: 100dvh; }
+
+/* ── Cabeçalho fixo ─────────────────────────────────────────────── */
+#topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--stone-950);
+  border-bottom: 1px solid var(--border);
+  padding: env(safe-area-inset-top, 0) 0 0;
+}
+#topbar-inner {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+}
+#topbar h1 {
+  font-size: 1rem; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--accent); flex: 1;
+}
+#topbar .series-label {
+  font-size: 0.72rem; color: var(--text-muted);
+  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Barra de progresso dourada — assinatura visual */
+#progress-bar-wrap {
+  height: 3px;
+  background: var(--border);
+}
+#progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--amber-400), var(--amber-200));
+  transition: width 0.5s ease;
+  width: 0%;
+  box-shadow: 0 0 8px var(--amber-400);
+}
+
+/* ── Navegação por abas ─────────────────────────────────────────── */
+#tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--stone-950);
+}
+.tab-btn {
+  flex: 1; padding: 10px 4px; background: none; border: none; cursor: pointer;
+  font-size: 0.78rem; color: var(--text-muted); letter-spacing: 0.04em;
+  border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s;
+  text-transform: uppercase;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── Conteúdo principal ─────────────────────────────────────────── */
+#content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── Tela: Vazia / Boas-vindas ──────────────────────────────────── */
+#screen-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 48px 24px; text-align: center; gap: 20px; min-height: 60vh;
+}
+#screen-empty .icon { font-size: 4rem; }
+#screen-empty h2 { font-size: 1.4rem; color: var(--text-dim); }
+#screen-empty p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; max-width: 320px; }
+
+/* ── Botões ─────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 20px; border-radius: var(--r); border: none;
+  font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  text-decoration: none;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); color: var(--stone-950); }
+.btn-ghost { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); }
+.btn-danger { background: transparent; color: var(--rose-500); border: 1px solid var(--rose-500); }
+.btn-sm { padding: 8px 14px; font-size: 0.82rem; }
+.btn-icon {
+  width: 40px; height: 40px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--surface); border: 1px solid var(--border);
+  cursor: pointer; font-size: 1.1rem; color: var(--text-dim);
+  transition: background 0.15s, color 0.15s;
+}
+.btn-icon:hover { background: var(--border); color: var(--text-main); }
+
+/* ── Tela: Grid de dias ─────────────────────────────────────────── */
+#screen-grid { padding: 16px; }
+.grid-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.grid-header h2 { font-size: 1.1rem; color: var(--text-dim); }
+.progress-text { font-size: 0.82rem; color: var(--text-muted); }
+
+.day-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+}
+.day-cell {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: transform 0.1s, border-color 0.2s;
+  position: relative; overflow: hidden;
+}
+.day-cell:active { transform: scale(0.93); }
+.day-cell .num { font-family: Georgia, serif; font-size: 1.15rem; font-weight: 700; }
+.day-cell .lbl { font-size: 0.58rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Estado: hoje */
+.day-cell.today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.day-cell.today .num { color: var(--accent); }
+
+/* Estado: feito */
+.day-cell.done { background: rgba(34,197,94,0.1); border-color: var(--forest-500); }
+.day-cell.done::after {
+  content: '✓';
+  position: absolute; top: 4px; right: 6px;
+  font-size: 0.65rem; color: var(--forest-500);
+}
+.day-cell.done .num { color: var(--forest-500); }
+
+/* Badge de ciclo */
+.day-cell.cycle-2 { border-color: var(--forest-700); }
+.day-cell.cycle-2 .lbl { color: var(--forest-500); }
+
+/* ── Tela: Leitura do devocional ────────────────────────────────── */
+#screen-reading {
+  padding-bottom: 100px; /* espaço para o nav inferior */
+}
+
+.reading-header {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--stone-950);
+}
+.reading-header .badge {
+  display: inline-block;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  background: var(--accent-soft); color: var(--accent);
+  margin-bottom: 10px;
+}
+.reading-header .badge.cycle-2 { background: rgba(34,197,94,0.12); color: var(--forest-500); }
+.reading-header .day-counter { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; }
+.reading-header .day-title { font-size: 1.5rem; line-height: 1.3; color: var(--text-main); margin-bottom: 8px; }
+.reading-header .passage-ref {
+  font-size: 0.85rem; color: var(--text-muted);
+  display: flex; align-items: center; gap: 6px;
+}
+.reading-header .passage-ref::before { content: ''; display: block; width: 16px; height: 1px; background: var(--accent); }
+
+/* Seções do devocional */
+.section {
+  margin: 0 16px 4px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.section:last-child { border-bottom: none; }
+
+.section-label {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-muted); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* Texto bíblico */
+.bible-tabs {
+  display: flex; gap: 4px; margin-bottom: 12px;
+}
+.bible-tab {
+  padding: 5px 12px; border-radius: 20px; font-size: 0.78rem;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+}
+.bible-tab.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+.bible-text {
+  font-family: Georgia, serif; font-size: 1rem;
+  line-height: 1.75; color: var(--text-dim);
+  display: none;
+}
+.bible-text.active { display: block; }
+.bible-text b { color: var(--amber-200); font-weight: 600; }
+.bible-ref { font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; }
+.bible-note { font-size: 0.72rem; color: var(--text-muted); font-style: italic; margin-top: 4px; }
+
+/* Reflexão */
+.reflection-paragraph {
+  font-size: 0.95rem; line-height: 1.8;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+}
+.reflection-paragraph:last-child { margin-bottom: 0; }
+
+/* Vozes em diálogo */
+.authors-wrap {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.author-chip {
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 0.78rem; color: var(--amber-200);
+  background: var(--accent-soft); border: 1px solid rgba(251,191,36,0.2);
+}
+
+/* Oração */
+.prayer-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.prayer-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  font-size: 0.9rem; line-height: 1.55; color: var(--text-dim);
+}
+.prayer-num {
+  min-width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent-soft); border: 1px solid rgba(251,191,36,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-family: Georgia, serif; color: var(--accent);
+  margin-top: 1px;
+}
+
+/* Atividade */
+.activity-box {
+  background: rgba(251,191,36,0.06);
+  border: 1px solid rgba(251,191,36,0.25);
+  border-left: 3px solid var(--amber-400);
+  border-radius: var(--r); padding: 16px;
+  font-size: 0.9rem; line-height: 1.7; color: var(--text-dim);
+}
+.activity-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.activity-title {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--amber-300); font-weight: 600;
+}
+.activity-steps { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.activity-step { display: flex; gap: 10px; align-items: flex-start; font-size: 0.9rem; line-height: 1.6; color: var(--text-dim); }
+.activity-step-dot { min-width: 7px; height: 7px; border-radius: 50%; background: var(--amber-400); margin-top: 7px; flex-shrink: 0; }
+.day-cell .activity-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--amber-400); position: absolute; top: 5px; left: 6px; }
+
+/* CTA: marcar como feito */
+.done-cta {
+  margin: 0 16px;
+  padding: 20px 0;
+}
+.done-cta .btn { width: 100%; justify-content: center; padding: 16px; font-size: 1rem; }
+
+/* ── Nav inferior ───────────────────────────────────────────────── */
+#bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
+  background: var(--stone-950);
+  border-top: 1px solid var(--border);
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+#bottom-nav .nav-info {
+  font-size: 0.78rem; color: var(--text-muted); text-align: center; flex: 1;
+}
+#bottom-nav .nav-info strong { color: var(--text-dim); display: block; font-size: 0.9rem; }
+
+/* ── Tela: Configurações ────────────────────────────────────────── */
+#screen-settings { padding: 20px 16px 120px; }
+#screen-settings h2 { font-size: 1.1rem; color: var(--text-dim); margin-bottom: 20px; }
+
+.setting-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px; margin-bottom: 12px;
+}
+.setting-card h3 { font-size: 0.9rem; color: var(--text-dim); margin-bottom: 4px; }
+.setting-card p { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5; }
+
+.time-input-row { display: flex; align-items: center; gap: 10px; }
+.time-input {
+  background: var(--stone-700); border: 1px solid var(--border);
+  color: var(--text-main); padding: 8px 12px;
+  border-radius: 6px; font-size: 1rem; width: 120px;
+}
+
+.series-list { display: flex; flex-direction: column; gap: 8px; }
+.series-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--stone-700); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px;
+}
+.series-item .series-info { flex: 1; }
+.series-item .series-name { font-size: 0.9rem; color: var(--text-dim); font-weight: 600; }
+.series-item .series-meta { font-size: 0.75rem; color: var(--text-muted); }
+.series-item .series-active {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--accent); background: var(--accent-soft);
+  padding: 2px 8px; border-radius: 10px;
+}
+
+/* Notif status */
+.notif-status {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.8rem; color: var(--text-muted);
+  background: var(--stone-700); padding: 6px 12px; border-radius: 20px;
+}
+.notif-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
+.notif-dot.on { background: var(--forest-500); }
+.notif-dot.off { background: var(--rose-500); }
+
+/* ── Toast ──────────────────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--stone-700); color: var(--text-main);
+  padding: 10px 18px; border-radius: 20px;
+  font-size: 0.85rem; white-space: nowrap;
+  opacity: 0; transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none; z-index: 200;
+  border: 1px solid var(--border);
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Modal ──────────────────────────────────────────────────────── */
+#modal-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.7); display: none;
+  align-items: flex-end; justify-content: center;
+  padding: 0 0 env(safe-area-inset-bottom, 0);
+}
+#modal-overlay.open { display: flex; }
+#modal-box {
+  background: var(--surface); border-radius: 16px 16px 0 0;
+  border: 1px solid var(--border);
+  width: 100%; max-width: 520px;
+  padding: 24px 20px 32px;
+  display: flex; flex-direction: column; gap: 14px;
+  max-height: 80dvh; overflow-y: auto;
+}
+#modal-box h3 { font-size: 1.1rem; color: var(--text-dim); }
+#modal-box p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Cabeçalho -->
+  <header id="topbar">
+    <div id="topbar-inner">
+      <h1>📖 Devocionais</h1>
+      <span id="series-label-top" class="series-label"></span>
+      <button class="btn-icon" id="btn-settings" title="Configurações" aria-label="Configurações">⚙️</button>
+    </div>
+    <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+  </header>
+
+  <!-- Abas -->
+  <nav id="tabs">
+    <button class="tab-btn active" data-tab="reading">Hoje</button>
+    <button class="tab-btn" data-tab="grid">Todos os dias</button>
+  </nav>
+
+  <!-- Conteúdo dinâmico -->
+  <main id="content">
+    <!-- Tela vazia (sem série carregada) -->
+    <section id="screen-empty">
+      <div class="icon">📖</div>
+      <h2>Nenhuma série carregada</h2>
+      <p>Importe um arquivo JSON de devocional para começar. Os arquivos são gerados junto com o HTML e PDF de cada série.</p>
+      <button class="btn btn-primary" id="btn-import-empty">Importar série JSON</button>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">Ou use o botão ⚙️ para gerenciar séries.</p>
+    </section>
+
+    <!-- Tela de leitura -->
+    <section id="screen-reading" style="display:none"></section>
+
+    <!-- Tela de grade de dias -->
+    <section id="screen-grid" style="display:none">
+      <div class="grid-header">
+        <h2 id="grid-series-title">Série</h2>
+        <span class="progress-text" id="grid-progress-text"></span>
+      </div>
+      <div class="day-grid" id="day-grid"></div>
+    </section>
+
+    <!-- Tela de configurações -->
+    <section id="screen-settings" style="display:none">
+      <h2>Configurações</h2>
+
+      <!-- Séries -->
+      <div class="setting-card">
+        <h3>Séries salvas</h3>
+        <p>Importe séries em JSON (geradas junto com o HTML/PDF de cada devocional).</p>
+        <div class="series-list" id="series-list"></div>
+        <div style="margin-top:12px">
+          <button class="btn btn-ghost btn-sm" id="btn-import-settings">＋ Importar nova série</button>
+        </div>
+      </div>
+
+      <!-- Notificações -->
+      <div class="setting-card">
+        <h3>Lembrete diário</h3>
+        <p>Receba uma notificação no horário escolhido. Funciona mesmo com o app fechado (requer permissão e conexão inicial).</p>
+        <div class="time-input-row">
+          <input type="time" class="time-input" id="notif-time" value="07:00">
+          <button class="btn btn-ghost btn-sm" id="btn-save-notif">Salvar</button>
+        </div>
+        <div style="margin-top:10px">
+          <span class="notif-status">
+            <span class="notif-dot" id="notif-dot"></span>
+            <span id="notif-status-text">Verificando…</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Reset -->
+      <div class="setting-card">
+        <h3>Progresso</h3>
+        <p>Apaga as marcações de "feito" da série ativa (os textos permanecem).</p>
+        <button class="btn btn-danger btn-sm" id="btn-reset-progress">Limpar progresso</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Nav inferior (só na leitura) -->
+  <footer id="bottom-nav" style="display:none">
+    <button class="btn-icon" id="btn-prev" title="Dia anterior">←</button>
+    <div class="nav-info">
+      <strong id="nav-day-label">Dia 1</strong>
+      <span id="nav-series-short"></span>
+    </div>
+    <button class="btn-icon" id="btn-next" title="Próximo dia">→</button>
+  </footer>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Modal genérico -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <h3 id="modal-title">Título</h3>
+    <p id="modal-body">Corpo</p>
+    <div id="modal-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;"></div>
+  </div>
+</div>
+
+<!-- Input de arquivo oculto -->
+<input type="file" id="file-input" accept=".json" style="display:none">
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   ESTADO GLOBAL
+═══════════════════════════════════════════════════════════════════ */
+const STATE = {
+  series: [],          // lista de séries salvas: [{id, name, days:[...], imported}]
+  activeSeriesId: null,
+  currentDayIndex: 0,
+  progress: {},        // {seriesId: Set<dayIndex>}
+  notifTime: '07:00',
+  notifEnabled: false,
+};
+
+/* ── Persistência (localStorage) ────────────────────────────────── */
+function save() {
+  try {
+    const toStore = {
+      series: STATE.series,
+      activeSeriesId: STATE.activeSeriesId,
+      currentDayIndex: STATE.currentDayIndex,
+      progress: Object.fromEntries(
+        Object.entries(STATE.progress).map(([k, v]) => [k, [...v]])
+      ),
+      notifTime: STATE.notifTime,
+    };
+    localStorage.setItem('devocional-state', JSON.stringify(toStore));
+  } catch(e) { console.warn('Falha ao salvar estado', e); }
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem('devocional-state');
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    STATE.series = d.series || [];
+    STATE.activeSeriesId = d.activeSeriesId || null;
+    STATE.currentDayIndex = d.currentDayIndex || 0;
+    STATE.notifTime = d.notifTime || '07:00';
+    STATE.progress = {};
+    for (const [k, v] of Object.entries(d.progress || {})) {
+      STATE.progress[k] = new Set(v);
+    }
+  } catch(e) { console.warn('Falha ao carregar estado', e); }
+}
+
+/* ── Série ativa ────────────────────────────────────────────────── */
+function activeSeries() {
+  return STATE.series.find(s => s.id === STATE.activeSeriesId) || null;
+}
+function activeProgress() {
+  if (!STATE.activeSeriesId) return new Set();
+  if (!STATE.progress[STATE.activeSeriesId]) STATE.progress[STATE.activeSeriesId] = new Set();
+  return STATE.progress[STATE.activeSeriesId];
+}
+
+/* ── Dia "hoje" (baseado em data de início da série) ─────────────── */
+function todayIndex(series) {
+  if (!series || !series.startDate) return 0;
+  const start = new Date(series.startDate);
+  const now = new Date();
+  const diff = Math.floor((now - start) / 86400000);
+  return Math.max(0, Math.min(diff, series.days.length - 1));
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ROTEAMENTO / TELAS
+═══════════════════════════════════════════════════════════════════ */
+let currentTab = 'reading'; // 'reading' | 'grid' | 'settings'
+
+function showTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+
+  const hasSeries = !!activeSeries();
+  const isSettings = tab === 'settings';
+
+  document.getElementById('screen-empty').style.display   = (!hasSeries && tab === 'reading') ? '' : 'none';
+  document.getElementById('screen-reading').style.display = (hasSeries && tab === 'reading')  ? '' : 'none';
+  document.getElementById('screen-grid').style.display    = (hasSeries && tab === 'grid')     ? '' : 'none';
+  document.getElementById('screen-settings').style.display = isSettings                       ? '' : 'none';
+  document.getElementById('bottom-nav').style.display     = (hasSeries && tab === 'reading')  ? '' : 'none';
+
+  // Remover aba "settings" das tab-btns (config abre via botão ⚙️)
+  document.querySelectorAll('[data-tab]').forEach(b => {
+    if (b.dataset.tab === tab) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+
+  if (tab === 'reading' && hasSeries) renderReading();
+  if (tab === 'grid' && hasSeries) renderGrid();
+  if (tab === 'settings') renderSettings();
+
+  updateTopbar();
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RENDERIZAÇÃO — TOPBAR
+═══════════════════════════════════════════════════════════════════ */
+function updateTopbar() {
+  const s = activeSeries();
+  document.getElementById('series-label-top').textContent = s ? s.name : '';
+
+  if (s) {
+    const done = activeProgress().size;
+    const total = s.days.length;
+    document.getElementById('progress-bar').style.width = `${(done / total) * 100}%`;
+  } else {
+    document.getElementById('progress-bar').style.width = '0%';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RENDERIZAÇÃO — LEITURA
+═══════════════════════════════════════════════════════════════════ */
+function renderReading(dayIndex) {
+  const s = activeSeries();
+  if (!s) return;
+
+  if (dayIndex !== undefined) STATE.currentDayIndex = dayIndex;
+  const idx = STATE.currentDayIndex;
+  const d = s.days[idx];
+  if (!d) return;
+
+  const progress = activeProgress();
+  const isDone = progress.has(idx);
+  const isSecondCycle = (d.cycle || '').toLowerCase().includes('2') ||
+                        (d.cycle || '').toLowerCase().includes('relendo') ||
+                        (d.cycle || '').toLowerCase().includes('segunda');
+
+  // Nav inferior
+  document.getElementById('nav-day-label').textContent = `Dia ${d.day || idx + 1} de ${s.days.length}`;
+  document.getElementById('nav-series-short').textContent = s.name;
+  document.getElementById('btn-prev').disabled = idx === 0;
+  document.getElementById('btn-next').disabled = idx === s.days.length - 1;
+
+  // Montar HTML
+  let html = '';
+
+  // Cabeçalho
+  html += `
+    <div class="reading-header">
+      ${d.cycle ? `<div class="badge${isSecondCycle ? ' cycle-2' : ''}">${esc(d.cycle)}</div>` : ''}
+      <div class="day-counter">Dia ${d.day || idx + 1} de ${s.days.length}</div>
+      <h2 class="day-title">${esc(d.title || '')}</h2>
+      <div class="passage-ref">${esc(d.passage || '')}</div>
+    </div>
+  `;
+
+  // Texto bíblico
+  if (d.naa || d.niv) {
+    html += `<div class="section">
+      <div class="section-label">Texto Bíblico</div>
+      <div class="bible-tabs">
+        ${d.naa ? `<button class="bible-tab active" onclick="switchBible(this,'naa')">NAA — Português</button>` : ''}
+        ${d.niv ? `<button class="bible-tab${!d.naa ? ' active' : ''}" onclick="switchBible(this,'niv')">NIV — English</button>` : ''}
+      </div>
+      ${d.naa ? `
+        <div class="bible-text active" id="btext-naa">
+          <div class="serif">${d.naa}</div>
+          ${d.ref_naa ? `<div class="bible-ref">${esc(d.ref_naa)}</div>` : ''}
+          <div class="bible-note">Em negrito: versículos em foco</div>
+        </div>` : ''}
+      ${d.niv ? `
+        <div class="bible-text${!d.naa ? ' active' : ''}" id="btext-niv">
+          <div class="serif">${d.niv}</div>
+          ${d.ref_niv ? `<div class="bible-ref">${esc(d.ref_niv)}</div>` : ''}
+          <div class="bible-note">In bold: focus verses</div>
+        </div>` : ''}
+    </div>`;
+  }
+
+  // Reflexão
+  if (d.reflection && d.reflection.length) {
+    html += `<div class="section">
+      <div class="section-label">Reflexão</div>
+      ${d.reflection.map(p => `<p class="reflection-paragraph">${esc(p)}</p>`).join('')}
+    </div>`;
+  }
+
+  // Vozes
+  if (d.authors && d.authors.length) {
+    html += `<div class="section">
+      <div class="section-label">Vozes em Diálogo</div>
+      <div class="authors-wrap">
+        ${d.authors.map(a => `<span class="author-chip">${esc(a)}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Oração
+  if (d.prayer && d.prayer.length) {
+    html += `<div class="section">
+      <div class="section-label">Sugestões para Oração</div>
+      <ul class="prayer-list">
+        ${d.prayer.map((p, i) => `
+          <li class="prayer-item">
+            <span class="prayer-num">${i + 1}</span>
+            <span>${esc(p)}</span>
+          </li>`).join('')}
+      </ul>
+    </div>`;
+  }
+
+  // Atividade — aceita string simples ou array de passos
+  if (d.activity) {
+    const isArray = Array.isArray(d.activity);
+    const activityInner = isArray
+      ? `<ul class="activity-steps">${d.activity.map(step =>
+          `<li class="activity-step"><span class="activity-step-dot"></span><span>${esc(step)}</span></li>`
+        ).join('')}</ul>`
+      : `<p>${esc(d.activity)}</p>`;
+
+    html += `<div class="section">
+      <div class="section-label">Para Praticar</div>
+      <div class="activity-box">
+        <div class="activity-header">
+          <span>&#x270F;&#xFE0F;</span>
+          <span class="activity-title">Atividade do dia</span>
+        </div>
+        ${activityInner}
+      </div>
+    </div>`;
+  }
+
+  // CTA marcar como feito
+  html += `<div class="done-cta">
+    <button class="btn ${isDone ? 'btn-ghost' : 'btn-primary'}" id="btn-done-day"
+      onclick="toggleDone(${idx})">
+      ${isDone ? '✓ Concluído' : 'Marcar como concluído'}
+    </button>
+  </div>`;
+
+  const el = document.getElementById('screen-reading');
+  el.innerHTML = html;
+  el.scrollTop = 0;
+  // rolar a main ao topo
+  document.getElementById('content').scrollTo({ top: 0, behavior: 'instant' });
+
+  save();
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Chamada de within innerHTML — safe via onclick
+window.switchBible = function(btn, lang) {
+  document.querySelectorAll('.bible-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.bible-text').forEach(t => t.classList.remove('active'));
+  const el = document.getElementById(`btext-${lang}`);
+  if (el) el.classList.add('active');
+};
+
+window.toggleDone = function(idx) {
+  const p = activeProgress();
+  if (p.has(idx)) p.delete(idx);
+  else p.add(idx);
+  save();
+  renderReading(idx);
+  updateTopbar();
+  showToast(p.has(idx) ? '✓ Marcado como concluído' : 'Marcação removida');
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   RENDERIZAÇÃO — GRADE
+═══════════════════════════════════════════════════════════════════ */
+function renderGrid() {
+  const s = activeSeries();
+  if (!s) return;
+  const progress = activeProgress();
+  const todayIdx = todayIndex(s);
+  const done = progress.size;
+
+  document.getElementById('grid-series-title').textContent = s.name;
+  document.getElementById('grid-progress-text').textContent = `${done} / ${s.days.length} concluídos`;
+
+  const grid = document.getElementById('day-grid');
+  grid.innerHTML = s.days.map((d, i) => {
+    const isDone = progress.has(i);
+    const isToday = i === todayIdx;
+    const isSecond = (d.cycle || '').toLowerCase().includes('2') ||
+                     (d.cycle || '').toLowerCase().includes('relendo') ||
+                     (d.cycle || '').toLowerCase().includes('segunda');
+    const hasActivity = !!d.activity;
+    return `<button class="day-cell${isDone ? ' done' : ''}${isToday ? ' today' : ''}${isSecond ? ' cycle-2' : ''}"
+      onclick="goToDay(${i})">
+      ${hasActivity ? '<span class="activity-dot"></span>' : ''}
+      <span class="num">${d.day || i + 1}</span>
+      <span class="lbl">${isSecond ? '2ª' : '1ª'}</span>
+    </button>`;
+  }).join('');
+}
+
+window.goToDay = function(idx) {
+  STATE.currentDayIndex = idx;
+  showTab('reading');
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   RENDERIZAÇÃO — CONFIGURAÇÕES
+═══════════════════════════════════════════════════════════════════ */
+function renderSettings() {
+  // Lista de séries
+  const el = document.getElementById('series-list');
+  if (STATE.series.length === 0) {
+    el.innerHTML = `<p style="font-size:0.82rem;color:var(--text-muted)">Nenhuma série importada ainda.</p>`;
+  } else {
+    el.innerHTML = STATE.series.map(s => {
+      const isActive = s.id === STATE.activeSeriesId;
+      const done = (STATE.progress[s.id] || new Set()).size;
+      return `<div class="series-item">
+        <div class="series-info">
+          <div class="series-name">${esc(s.name)}</div>
+          <div class="series-meta">${s.days.length} dias · ${done} concluídos</div>
+        </div>
+        ${isActive ? `<span class="series-active">Ativa</span>` : `<button class="btn btn-ghost btn-sm" onclick="activateSeries('${s.id}')">Usar</button>`}
+        <button class="btn btn-ghost btn-sm" onclick="removeSeries('${s.id}')" style="color:var(--rose-500)">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  // Horário notificação
+  document.getElementById('notif-time').value = STATE.notifTime;
+  updateNotifStatus();
+}
+
+window.activateSeries = function(id) {
+  STATE.activeSeriesId = id;
+  STATE.currentDayIndex = 0;
+  save();
+  showToast('Série ativada!');
+  renderSettings();
+  updateTopbar();
+};
+
+window.removeSeries = function(id) {
+  showModal(
+    'Remover série',
+    'Tem certeza? O progresso desta série também será apagado.',
+    [
+      { label: 'Cancelar', action: closeModal, style: 'btn-ghost' },
+      { label: 'Remover', style: 'btn-danger', action: () => {
+        STATE.series = STATE.series.filter(s => s.id !== id);
+        delete STATE.progress[id];
+        if (STATE.activeSeriesId === id) {
+          STATE.activeSeriesId = STATE.series[0]?.id || null;
+          STATE.currentDayIndex = 0;
+        }
+        save();
+        closeModal();
+        renderSettings();
+        updateTopbar();
+        showToast('Série removida');
+      }}
+    ]
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   IMPORTAÇÃO DE JSON
+═══════════════════════════════════════════════════════════════════ */
+function triggerImport() {
+  document.getElementById('file-input').click();
+}
+
+document.getElementById('file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    importSeries(data, file.name);
+  } catch (err) {
+    showModal('Erro ao importar', `Arquivo inválido ou JSON malformado.\n\n${err.message}`, [
+      { label: 'Ok', action: closeModal, style: 'btn-ghost' }
+    ]);
+  }
+});
+
+function importSeries(data, filename) {
+  // Aceita tanto um objeto {name, days:[...]} quanto um array direto de dias
+  let name, days;
+  if (Array.isArray(data)) {
+    days = data;
+    name = filename.replace(/\.json$/i, '').replace(/_/g, ' ');
+  } else if (data.days && Array.isArray(data.days)) {
+    days = data.days;
+    name = data.name || filename.replace(/\.json$/i, '').replace(/_/g, ' ');
+  } else {
+    showModal('Formato inválido',
+      'O JSON deve ser um array de dias ou um objeto com a chave "days".',
+      [{ label: 'Ok', action: closeModal, style: 'btn-ghost' }]);
+    return;
+  }
+
+  if (!days.length) {
+    showModal('Série vazia', 'Nenhum dia encontrado no arquivo.', [
+      { label: 'Ok', action: closeModal, style: 'btn-ghost' }]);
+    return;
+  }
+
+  const id = 'series-' + Date.now();
+  const series = { id, name, days, imported: new Date().toISOString(), startDate: new Date().toISOString() };
+  STATE.series.push(series);
+  STATE.activeSeriesId = id;
+  STATE.currentDayIndex = 0;
+  STATE.progress[id] = new Set();
+  save();
+  showToast(`"${name}" importada — ${days.length} dias`);
+  showTab('reading');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   NOTIFICAÇÕES
+═══════════════════════════════════════════════════════════════════ */
+let notifTimer = null;
+
+async function requestNotifPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+function updateNotifStatus() {
+  const dot = document.getElementById('notif-dot');
+  const txt = document.getElementById('notif-status-text');
+  if (!txt) return;
+  if (!('Notification' in window)) {
+    dot.className = 'notif-dot off';
+    txt.textContent = 'Notificações não suportadas neste navegador';
+  } else if (Notification.permission === 'granted') {
+    dot.className = 'notif-dot on';
+    txt.textContent = `Ativo · ${STATE.notifTime}`;
+  } else if (Notification.permission === 'denied') {
+    dot.className = 'notif-dot off';
+    txt.textContent = 'Permissão negada nas configurações do navegador';
+  } else {
+    dot.className = 'notif-dot';
+    txt.textContent = 'Clique em "Salvar" para ativar';
+  }
+}
+
+function scheduleNotification() {
+  if (notifTimer) clearTimeout(notifTimer);
+  const [h, m] = STATE.notifTime.split(':').map(Number);
+  const now = new Date();
+  const next = new Date();
+  next.setHours(h, m, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  const delay = next - now;
+
+  notifTimer = setTimeout(() => {
+    const s = activeSeries();
+    const dayName = s ? `Dia ${STATE.currentDayIndex + 1}: ${s.days[STATE.currentDayIndex]?.title || ''}` : 'Seu devocional de hoje';
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SCHEDULE_NOTIFICATION',
+        body: dayName
+      });
+    } else if (Notification.permission === 'granted') {
+      new Notification('📖 Devocional do dia', { body: dayName, tag: 'devocional-diario' });
+    }
+    scheduleNotification(); // reagendar para o dia seguinte
+  }, delay);
+}
+
+document.getElementById('btn-save-notif').addEventListener('click', async () => {
+  const granted = await requestNotifPermission();
+  if (!granted) {
+    showToast('⚠ Permissão de notificação negada');
+    updateNotifStatus();
+    return;
+  }
+  STATE.notifTime = document.getElementById('notif-time').value;
+  save();
+  scheduleNotification();
+  updateNotifStatus();
+  showToast(`✓ Lembrete salvo para ${STATE.notifTime}`);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   EVENTOS DE UI
+═══════════════════════════════════════════════════════════════════ */
+// Abas
+document.querySelectorAll('[data-tab]').forEach(btn => {
+  btn.addEventListener('click', () => showTab(btn.dataset.tab));
+});
+
+// Botão configurações
+document.getElementById('btn-settings').addEventListener('click', () => {
+  showTab('settings');
+});
+
+// Importar
+document.getElementById('btn-import-empty').addEventListener('click', triggerImport);
+document.getElementById('btn-import-settings').addEventListener('click', triggerImport);
+
+// Nav anterior/próximo
+document.getElementById('btn-prev').addEventListener('click', () => {
+  if (STATE.currentDayIndex > 0) renderReading(STATE.currentDayIndex - 1);
+});
+document.getElementById('btn-next').addEventListener('click', () => {
+  const s = activeSeries();
+  if (s && STATE.currentDayIndex < s.days.length - 1) renderReading(STATE.currentDayIndex + 1);
+});
+
+// Reset progresso
+document.getElementById('btn-reset-progress').addEventListener('click', () => {
+  showModal('Limpar progresso', 'Isso apagará todas as marcações de "concluído" da série ativa. Os textos permanecem.', [
+    { label: 'Cancelar', action: closeModal, style: 'btn-ghost' },
+    { label: 'Limpar', style: 'btn-danger', action: () => {
+      if (STATE.activeSeriesId) {
+        STATE.progress[STATE.activeSeriesId] = new Set();
+        save();
+        updateTopbar();
+        closeModal();
+        showToast('Progresso apagado');
+      }
+    }}
+  ]);
+});
+
+// Swipe para navegar (toque)
+let touchStartX = 0;
+document.getElementById('screen-reading').addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+}, { passive: true });
+document.getElementById('screen-reading').addEventListener('touchend', e => {
+  const diff = touchStartX - e.changedTouches[0].clientX;
+  const s = activeSeries();
+  if (Math.abs(diff) > 60 && s) {
+    if (diff > 0 && STATE.currentDayIndex < s.days.length - 1) renderReading(STATE.currentDayIndex + 1);
+    if (diff < 0 && STATE.currentDayIndex > 0) renderReading(STATE.currentDayIndex - 1);
+  }
+}, { passive: true });
+
+/* ═══════════════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════════════ */
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════════════════════════ */
+function showModal(title, body, actions) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent = body;
+  const actEl = document.getElementById('modal-actions');
+  actEl.innerHTML = '';
+  actions.forEach(a => {
+    const btn = document.createElement('button');
+    btn.className = `btn ${a.style || 'btn-ghost'}`;
+    btn.textContent = a.label;
+    btn.onclick = a.action;
+    actEl.appendChild(btn);
+  });
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   SERVICE WORKER
+═══════════════════════════════════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(err => {
+      console.warn('SW não registrado:', err);
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   INICIALIZAÇÃO
+═══════════════════════════════════════════════════════════════════ */
+load();
+
+// Ir direto ao dia de hoje
+const initSeries = activeSeries();
+if (initSeries) {
+  STATE.currentDayIndex = todayIndex(initSeries);
+}
+
+showTab('reading');
+
+// Agendar notificação se já houver permissão
+if (Notification.permission === 'granted') {
+  scheduleNotification();
+}
+</script>
+</body>
+</html>
